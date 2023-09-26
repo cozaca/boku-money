@@ -20,7 +20,7 @@ public class TransactionService implements OperationService
     @Inject
     private AccountService accountService;
     @Inject
-    private OperationCache operationCacheCache;
+    private OperationCache operationCache;
 
     private final Lock lock = new ReentrantLock();
 
@@ -41,7 +41,7 @@ public class TransactionService implements OperationService
             if (!isOperationValid(sender, receiver, amount))
             {
                 Operation transaction = createTransaction(senderId, receiverId, amount, FAILED);
-                operationCacheCache.put(transaction.getOperationId(), transaction);
+                operationCache.put(transaction.getOperationId(), transaction);
                 return transaction;
             }
 
@@ -49,7 +49,7 @@ public class TransactionService implements OperationService
             receiver.setAccountBalance(receiver.getAccountBalance().add(amount));
 
             Operation operation = createTransaction(sender.getAccountId(), receiverId, amount, COMPLETED);
-            operationCacheCache.put(operation.getOperationId(), operation);
+            operationCache.put(operation.getOperationId(), operation);
 
             return operation;
         }

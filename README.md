@@ -1,5 +1,11 @@
 # boku-money
 
+# Assumptions:
+- didn't handle the user management
+- hardcode some predefined accounts that can be used while testing with Swagger
+- there is no proper link between user -> accounts 
+
+
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .

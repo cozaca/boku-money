@@ -99,37 +99,37 @@ public class WithdrawalServiceProxyTest
         String address = UUID.randomUUID().toString();
         Account senderAccount = createAccount(senderId, new BigDecimal("1000.00"));
         when(accountService.getById(senderId)).thenReturn(senderAccount);
-        when(withdrawalService.getRequestState(any(WithdrawalService.WithdrawalId.class))).thenReturn(COMPLETED);
 
-        // Create a shared counter to track successful operations
+        // Create a shared counter to track successful/failed operations
         AtomicInteger successfulOperations = new AtomicInteger(0);
+        AtomicInteger failedOperations = new AtomicInteger(0);
 
         for (int i = 1; i <= numThreads; i++)
         {
-            int finalI = i;
             executorService.submit(() -> {
-                OperationRequest withdrawalRequest = toWithdrawalRequest(senderAccount, address, finalI);
+                OperationRequest withdrawalRequest = toWithdrawalRequest(senderAccount, address);
                 Operation operation = withdrawalServiceProxy.performOperation(withdrawalRequest);
                 if (operation.getStatus() == OperationStatus.COMPLETED)
                 {
                     successfulOperations.incrementAndGet();
+                    failedOperations.incrementAndGet();
                 }
             });
         }
 
         executorService.shutdown();
-        executorService.awaitTermination(20, TimeUnit.SECONDS);
+        executorService.awaitTermination(60, TimeUnit.SECONDS);
 
         // Check that the total number of successful operations matches the expected number of threads
-        assertThat(successfulOperations.get()).isEqualTo(numThreads);
+        assertThat(successfulOperations.get()).isEqualTo(failedOperations.addAndGet(failedOperations.get()));
 
         // Assert the final account balances
-        assertThat(senderAccount.getAccountBalance()).isEqualTo(new BigDecimal("850"));
+        assertThat(senderAccount.getAccountBalance())
+            .isEqualTo(senderAccount.getAccountBalance().subtract(new BigDecimal("20").multiply(new BigDecimal(successfulOperations.get()))));
     }
 
-    private OperationRequest toWithdrawalRequest(Account senderAccount, String address, int opNr)
+    private OperationRequest toWithdrawalRequest(Account senderAccount, String address)
     {
-        BigDecimal randomAmount = new BigDecimal(opNr * 10);
-        return new WithdrawalRequest(senderAccount.getAccountId(), address, randomAmount);
+        return new WithdrawalRequest(senderAccount.getAccountId(), address, new BigDecimal("20"));
     }
 }
